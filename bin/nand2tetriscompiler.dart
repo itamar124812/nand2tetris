@@ -1,8 +1,12 @@
 import 'dart:ffi';
 import 'dart:io';
-import 'package:path/path.dart';
-import 'package:nand2tetriscompiler/nand2tetriscompiler.dart'
-    as nand2tetriscompiler;
+
+String basename(String path)
+{
+  if(("/".contains(path)))
+    return path.split("/").last;
+  return path;
+}
 
 Future<void> main(List<String> arguments) async {
   var dir = Directory(arguments[0]);
