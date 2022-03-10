@@ -3,12 +3,13 @@ import 'dart:io';
 
 String basename(String path)
 {
-  if(("/".contains(path)))
-    return path.split("/").last;
+  if((path.contains(r"\")))
+    return path.split(r"\").last;
   return path;
 }
 
 Future<void> main(List<String> arguments) async {
+  print(arguments[0]);
   var dir = Directory(arguments[0]);
   final regx = RegExp("^.*.vm\$");
   try {
