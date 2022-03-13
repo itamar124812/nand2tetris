@@ -99,12 +99,15 @@ String push(String offset, var value) {
       break;
     case "argument":
       result += "@arg\n";
+      result+="D=M+"+val.toString()+"\n"+"@D\n";
       break;
     case "this":
     result+="@THIS\n";
+    result+="D=M+"+val.toString()+"\n"+"@D\n";
     break;
     case "that":
     result+="@that\n";
+    result+="D=M+"+val.toString()+"\n"+"@D\n";
     break;
     
     case "temp":break;
