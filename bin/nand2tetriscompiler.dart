@@ -7,12 +7,14 @@ String basename(String path) {
 }
 
 Future<void> main(List<String> arguments) async {
+  int count=1;
   var dir = Directory("C:\\Users\\USER");
   final regx = RegExp("^.*.vm\$");
   try {
     await for (final FileSystemEntity f in dir.list()) {
       var fileName = basename(f.path);
       if (regx.hasMatch(fileName) && f is File) {
+        count=0;
         var outputFile =
             File(dir.path + r"\" + fileName.split('.')[0] + ".asm");
         outputFile.create(recursive: true).then((File outputFile) {});
@@ -31,7 +33,15 @@ Future<void> main(List<String> arguments) async {
               } else if (items[1] == "temp") {
                 lexical += pop(5 + int.parse(items[2]), false, "");
               } else {
-                lexical += pop(int.parse(items[2]), false, items[1]);
+                var type="";
+                switch(items[1])
+                {
+                  case "local":type="LCL";break;
+                  case "argument":type="ARG";break;
+                  case "this":type="THIS";break;
+                  case "that":type="THAT";break;
+                }
+                lexical += pop(int.parse(items[2]), false, type);
               }
               break;
             case "add":
@@ -65,7 +75,9 @@ Future<void> main(List<String> arguments) async {
               {}
               break;
           }
-        }
+          lexical+="\n//Command number is $count\n\n";
+          count++;
+        }   
         outputFile.writeAsString(lexical);
       }
     }
@@ -75,15 +87,15 @@ Future<void> main(List<String> arguments) async {
 }
 
 String lt() {
-  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JGT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1";
+  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JGT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1\n";
 }
 
 String gt() {
-  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JLT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1";
+  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JLT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1\n";
 }
 
 String eq() {
-  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JEQ\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1";
+  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JEQ\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1\n";
 }
 
 String neg(List<String> items) {
