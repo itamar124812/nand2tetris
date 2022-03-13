@@ -22,8 +22,17 @@ Future<void> main(List<String> arguments) async {
           var items = line.split(" ");
           switch (items[0]) {
             case "push":
-              lexical += "@sp\n";
+              lexical += "@SP\n";
               lexical += push(items[1], items[2]);
+              break;
+            case "pop":
+              if (items[1] == "pointer") {
+                lexical += pop(int.parse(items[2]), true, "");
+              } else if (items[1] == "temp") {
+                lexical += pop(5 + int.parse(items[2]), false, "");
+              } else {
+                lexical += pop(int.parse(items[2]), false, items[1]);
+              }
               break;
             case "add":
               lexical += add(items);
@@ -50,7 +59,7 @@ Future<void> main(List<String> arguments) async {
               lexical += "@SP\nA=M-1 \nD=M \nA=A-1 \nM=D&M \n@SP\nM=M-1 \n";
               break;
             case "not":
-              lexical += "@sp\nA=M-1\nM=!M\n\n@SP\nM=M-1\n";
+              lexical += "@SP\nA=M-1\nM=!M\n\n@SP\nM=M-1\n";
               break;
             default:
               {}
@@ -78,7 +87,7 @@ String eq() {
 }
 
 String neg(List<String> items) {
-  return "@sp\nA=M-1\nD=-M\nM=D\n@SP\nM=M-1\n";
+  return "@SP\nA=M-1\nD=-M\nM=D\n@SP\nM=M-1\n";
 }
 
 String add(List<String> items) {
@@ -89,30 +98,99 @@ String sub(List<String> items) {
   return "@SP\nA=M-1 \nD=M \nA=A-1 \nM=D-M \n@SP\nM=M-1 \n";
 }
 
+String pop(int val, bool pointer, String type) {
+  if (type.isNotEmpty) {
+    return [
+      "@$val",
+      "D=A",
+      '@' + type,
+      "A=M",
+      "D=D+A",
+      '@' + type,
+      "M=D",
+      "@SP",
+      "M=M-1",
+      "A=M",
+      "D=M",
+      '@' + type,
+      "A=M",
+      "M=D",
+      "@$val",
+      "D=A",
+      '@' + type,
+      "A=M",
+      "D=A-D",
+      '@' + type,
+      "M=D"
+    ].join('\n');
+  }
+  if (!pointer) {
+    return ["@SP", "M=M-1", "M=A", "@$val", "D=M", "@SP", "M=M-1"].join('\n');
+  } else {
+    if (val == 0) {
+      return ["@SP", "M=M-1", "M=A", "@THIS", "D=M", "@SP", "M=M-1"].join('\n');
+    } else {
+      return ["@SP", "M=M-1", "M=A", "@THAT", "D=M", "@SP", "M=M-1"].join('\n');
+    }
+  }
+}
+
 String push(String offset, var value) {
   String result = "";
-  int val=int.parse(value);
+  int val = int.parse(value);
   switch (offset) {
     case "local":
-      result += "@lcl\n";
-      result+="D=M+"+val.toString()+"\n"+"@D\n";
+      result += "@LCL\n";
+      result += "D=M+" +
+          val.toString() +
+          "\n" +
+          "@D\n" +
+          "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "argument":
-      result += "@arg\n";
-      result+="D=M+"+val.toString()+"\n"+"@D\n";
+      result += "@ARG\n";
+      result += "D=M+" +
+          val.toString() +
+          "\n" +
+          "@D\n" +
+          "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
-    case "this":
-    result+="@THIS\n";
-    result+="D=M+"+val.toString()+"\n"+"@D\n";
-    break;
-    case "that":
-    result+="@that\n";
-    result+="D=M+"+val.toString()+"\n"+"@D\n";
-    break;
-    
-    case "temp":break;
-
+    case "THIS":
+      result += "@THIS\n";
+      result +
+          "D=M+" +
+          val.toString() +
+          "\n" +
+          "@D\n" +
+          "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+      break;
+    case "THAT":
+      result += "@THAT\n";
+      result += "D=M+" +
+          val.toString() +
+          "\n" +
+          "@D\n" +
+          "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+      break;
+    case "temp":
+      result += "@5\nD=A\nD=M+" +
+          val.toString() +
+          "\nD=D+A\nA=D\nD=M\n@SP\nA=M\nM=D\n@SP\n M=M+1\n";
+      break;
+    case "pointer":
+      if (val == 1) {
+        result += "@THAT\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+      } else {
+        result += "@THIS\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+      }
+      break;
+    case "constant":
+      result += "@" + value.toString() + "\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+      break;
+    case "static":
+      result +=
+          "@ClassA." + val.toString() + " D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+      break;
   }
-
   return result;
 }
