@@ -8,7 +8,7 @@ String basename(String path) {
 
 Future<void> main(List<String> arguments) async {
   int count=1;
-  var dir = Directory("C:\\Users\\USER");
+  var dir = Directory("C:\\Users\\USER\\Downloads\\nand2tetris\\nand2tetris\\projects\\07\\MemoryAccess\\StaticTest");
   final regx = RegExp("^.*.vm\$");
   try {
     await for (final FileSystemEntity f in dir.list()) {
@@ -40,7 +40,7 @@ Future<void> main(List<String> arguments) async {
                   case "argument":type="ARG";break;
                   case "this":type="THIS";break;
                   case "that":type="THAT";break;
-                  case "static":type=fileName.split(".")[0]+"."; break;
+                  case "static":type=fileName.split(".")[0]+"."+items[2]; break;
                 }
                 lexical += pop(int.parse(items[2]), false, type);
               }
