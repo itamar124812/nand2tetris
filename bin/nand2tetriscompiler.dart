@@ -25,7 +25,7 @@ Future<void> main(List<String> arguments) async {
           switch (items[0]) {
             case "push":
               lexical += "@SP\n";
-              lexical += push(items[1], items[2]);
+              lexical += push(items[1], items[2],fileName.split('.')[0]);
               break;
             case "pop":
               if (items[1] == "pointer") {
@@ -40,6 +40,7 @@ Future<void> main(List<String> arguments) async {
                   case "argument":type="ARG";break;
                   case "this":type="THIS";break;
                   case "that":type="THAT";break;
+                  case "static":type=fileName.split(".")[0]+"."; break;
                 }
                 lexical += pop(int.parse(items[2]), false, type);
               }
@@ -147,7 +148,7 @@ String pop(int val, bool pointer, String type) {
   }
 }
 
-String push(String offset, var value) {
+String push(String offset, var value,String filename) {
   String result = "";
   int val = int.parse(value);
   switch (offset) {
@@ -201,7 +202,7 @@ String push(String offset, var value) {
       break;
     case "static":
       result +=
-          "@ClassA." + val.toString() + " D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+          "@$filename." + val.toString() + " D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
   }
   return result;
