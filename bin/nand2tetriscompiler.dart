@@ -55,13 +55,13 @@ Future<void> main(List<String> arguments) async {
               lexical += neg(items);
               break;
             case "eq":
-              lexical += eq();
+              lexical += eq(count);
               break;
             case "gt":
-              lexical += gt();
+              lexical += gt(count);
               break;
             case "lt":
-              lexical += lt();
+              lexical += lt(count);
               break;
             case "or":
               lexical += "@SP\nA=M-1 \nD=M \nA=A-1 \nM=D|M \n@SP\nM=M-1 \n";
@@ -87,16 +87,16 @@ Future<void> main(List<String> arguments) async {
   }
 }
 
-String lt() {
-  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JGT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1\n";
+String lt(int j) {
+  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE"+j.toString()+"\nD;JGT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE"+j.toString()+"\n0;JMP\n(IF_TRUE"+j.toString()+")\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE"+j.toString()+")\n@SP\nM=M-1\n";
 }
 
-String gt() {
-  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JLT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1\n";
+String gt(int j) {
+  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE"+j.toString()+"\nD;JLT\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE"+j.toString()+"\n0;JMP\n(IF_TRUE"+j.toString()+")\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE"+j.toString()+")\n@SP\nM=M-1\n";
 }
 
-String eq() {
-  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE0\nD;JEQ\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE0\n0;JMP\n(IF_TRUE0)\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE0)\n@SP\nM=M-1\n";
+String eq(int j) {
+  return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE"+j.toString()+"\nD;JEQ\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE"+j.toString()+"\n0;JMP\n(IF_TRUE"+j.toString()+")\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE"+j.toString()+")\n@SP\nM=M-1\n";
 }
 
 String neg(List<String> items) {
