@@ -8,7 +8,7 @@ String basename(String path) {
 
 Future<void> main(List<String> arguments) async {
   int count=1;
-  var dir = Directory("C:\\Users\\USER\\Downloads\\nand2tetris\\nand2tetris\\projects\\07\\MemoryAccess\\StaticTest");
+  var dir = Directory("C:\nand2\nand2tetris\projects\07\MemoryAccess\BasicTest");
   final regx = RegExp("^.*.vm\$");
   try {
     await for (final FileSystemEntity f in dir.list()) {
@@ -138,7 +138,7 @@ String pop(int val, bool pointer, String type) {
     ].join('\n');
   }
   if (!pointer) {
-    return ["@SP", "M=M-1", "M=A", "@$val", "D=M", "@SP", "M=M-1"].join('\n');
+    return ["@SP", "M=M-1", "A=M","D=M", "@$val", "M=D"].join('\n');
   } else {
     if (val == 0) {
       return ["@SP", "M=M-1", "M=A", "@THIS", "D=M", "@SP", "M=M-1"].join('\n');
@@ -153,42 +153,33 @@ String push(String offset, var value,String filename) {
   int val = int.parse(value);
   switch (offset) {
     case "local":
-      result += "@LCL\n";
-      result += "D=M+" +
-          val.toString() +
-          "\n" +
+      result += "@" + val.toString() + "\nD=A\n@LCL\n";
+      result += "A=M\nD=D+A\nA=D\n" +
           "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "argument":
-      result += "@ARG\n";
-      result += "D=M+" +
-          val.toString() +
-          "\n" +
+      result += "@" + val.toString() + "\nD=A\n@ARG\n";
+      result += "A=M\nD=D+A\nA=D\n" +
           "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "THIS":
-      result += "@THIS\n";
-      result +
-          "D=M+" +
-          val.toString() +
-          "\n" +
+      result += "@" + val.toString() + "\nD=A\n@THIS\n";
+      result += "A=M\nD=D+A\nA=D\n" +
           "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "THAT":
-      result += "@THAT\n";
-      result += "D=M+" +
-          val.toString() +
-          "\n" +
+      result += "@" + val.toString() + "\nD=A\n@THAT\n";
+      result += "A=M\nD=D+A\nA=D\n" +
           "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "temp":
-      result += "@5\nD=A\nD=M+" +
+      result += "@5\nD=A\nD=A+" +
           val.toString() +
-          "\nD=D+A\nA=D\nD=M\n@SP\nA=M\nM=D\n@SP\n M=M+1\n";
+          "\nA=D\nD=M\n@SP\nA=M\nM=D\n@SP\n M=M+1\n";
       break;
     case "pointer":
       if (val == 1) {
@@ -202,7 +193,7 @@ String push(String offset, var value,String filename) {
       break;
     case "static":
       result +=
-          "@$filename." + val.toString() + " D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+          "@$filename." + val.toString() + "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
   }
   return result;
