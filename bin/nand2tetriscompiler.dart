@@ -8,7 +8,7 @@ String basename(String path) {
 
 Future<void> main(List<String> arguments) async {
   int count=1;
-  var dir = Directory("C:\nand2\nand2tetris\projects\07\MemoryAccess\BasicTest");
+  var dir = Directory(arguments[0]);
   final regx = RegExp("^.*.vm\$");
   try {
     await for (final FileSystemEntity f in dir.list()) {
@@ -30,9 +30,16 @@ Future<void> main(List<String> arguments) async {
             case "pop":
               if (items[1] == "pointer") {
                 lexical += pop(int.parse(items[2]), true, "");
-              } else if (items[1] == "temp") {
+              }
+              else if (items[1] == "temp") {
                 lexical += pop(5 + int.parse(items[2]), false, "");
-              } else {
+              }
+              else if(items[1] == "static"){
+                 String filen = fileName.split(".")[0]+"."+items[2];
+                 lexical += "@SP\nM=M-1\nA=M\nD=M\n@$filen\nM=D\n";
+
+          }
+              else {
                 var type="";
                 switch(items[1])
                 {
@@ -40,7 +47,6 @@ Future<void> main(List<String> arguments) async {
                   case "argument":type="ARG";break;
                   case "this":type="THIS";break;
                   case "that":type="THAT";break;
-                  case "static":type=fileName.split(".")[0]+"."+items[2]; break;
                 }
                 lexical += pop(int.parse(items[2]), false, type);
               }
@@ -70,7 +76,7 @@ Future<void> main(List<String> arguments) async {
               lexical += "@SP\nA=M-1 \nD=M \nA=A-1 \nM=D&M \n@SP\nM=M-1 \n";
               break;
             case "not":
-              lexical += "@SP\nA=M-1\nM=!M\n\n@SP\nM=M-1\n";
+              lexical += "@SP\nA=M-1\nM=!M\n";//@SP\nM=M-1\n";
               break;
             default:
               {}
@@ -99,8 +105,8 @@ String eq(int j) {
   return "@SP \nA=M-1\nD=M\nA=A-1\nD=D-M\n@IF_TRUE"+j.toString()+"\nD;JEQ\nD=0\n@SP\nA=M-1\nA=A-1\nM=D\n@IF_FALSE"+j.toString()+"\n0;JMP\n(IF_TRUE"+j.toString()+")\nD=-1\n@SP\nA=M-1\nA=A-1\nM=D\n(IF_FALSE"+j.toString()+")\n@SP\nM=M-1\n";
 }
 
-String neg(List<String> items) {
-  return "@SP\nA=M-1\nD=-M\nM=D\n@SP\nM=M-1\n";
+String neg(List<String> items) {///
+  return "@SP\nA=M-1\nD=-M\nM=D\n";
 }
 
 String add(List<String> items) {
@@ -108,7 +114,7 @@ String add(List<String> items) {
 }
 
 String sub(List<String> items) {
-  return "@SP\nA=M-1 \nD=M \nA=A-1 \nM=D-M \n@SP\nM=M-1 \n";
+  return "@SP\nA=M-1 \nD=M \nA=A-1 \nM=M-D \n@SP\nM=M-1 \n";
 }
 
 String pop(int val, bool pointer, String type) {
@@ -139,11 +145,12 @@ String pop(int val, bool pointer, String type) {
   }
   if (!pointer) {
     return ["@SP", "M=M-1", "A=M","D=M", "@$val", "M=D"].join('\n');
-  } else {
+  }
+  else {
     if (val == 0) {
-      return ["@SP", "M=M-1", "M=A", "@THIS", "D=M", "@SP", "M=M-1"].join('\n');
+      return ["@SP", "M=M-1", "A=M",  "D=M", "@THIS", "M=D"].join('\n');
     } else {
-      return ["@SP", "M=M-1", "M=A", "@THAT", "D=M", "@SP", "M=M-1"].join('\n');
+      return ["@SP", "M=M-1", "A=M",  "D=M", "@THAT", "M=D"].join('\n');
     }
   }
 }
@@ -153,33 +160,29 @@ String push(String offset, var value,String filename) {
   int val = int.parse(value);
   switch (offset) {
     case "local":
-      result += "@" + val.toString() + "\nD=A\n@LCL\n";
+      result += "@$val" +  "\nD=A\n@LCL\n";
       result += "A=M\nD=D+A\nA=D\n" +
-          "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "argument":
-      result += "@" + val.toString() + "\nD=A\n@ARG\n";
+      result += "@$val" +  "\nD=A\n@ARG\n";
       result += "A=M\nD=D+A\nA=D\n" +
-          "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
-    case "THIS":
-      result += "@" + val.toString() + "\nD=A\n@THIS\n";
+    case "this":
+      result += "@$val" +  "\nD=A\n@THIS\n";
       result += "A=M\nD=D+A\nA=D\n" +
-          "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
-    case "THAT":
-      result += "@" + val.toString() + "\nD=A\n@THAT\n";
+    case "that":
+      result += "@$val" + "\nD=A\n@THAT\n";
       result += "A=M\nD=D+A\nA=D\n" +
-          "@D\n" +
           "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "temp":
-      result += "@5\nD=A\nD=A+" +
-          val.toString() +
-          "\nA=D\nD=M\n@SP\nA=M\nM=D\n@SP\n M=M+1\n";
+      val += 5;
+      result += "@$val\n" +
+          "\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
       break;
     case "pointer":
       if (val == 1) {
