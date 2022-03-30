@@ -154,7 +154,10 @@ String pop(int val, bool pointer, String type) {
     }
   }
 }
-
+String goto(String Label,String filename)
+{
+  return
+}
 String push(String offset, var value,String filename) {
   String result = "";
   int val = int.parse(value);
