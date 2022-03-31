@@ -78,6 +78,18 @@ Future<void> main(List<String> arguments) async {
             case "not":
               lexical += "@SP\nA=M-1\nM=!M\n";//@SP\nM=M-1\n";
               break;
+              case "goto":
+              lexical+=goto(items[1], fileName.split('.')[0]);
+              break;
+              case "if-goto":
+              lexical+=if_goto(items[1], fileName.split('.')[0]);
+              break;
+              case "label":
+              lexical+=Lable(items[1], fileName.split('.')[0]);
+              break;
+              case "call":
+              lexical+=call(items[1],int.parse(items[2]));
+              break;
             default:
               {}
               break;
@@ -156,16 +168,41 @@ String pop(int val, bool pointer, String type) {
 }
 String goto(String Label,String filename)
 {
-  return
+  if(filename=="") return "$Label\n0;JMP\n";
+  return filename+'.'+Label+"\n0;JMP\n";
+}
+String Lable(String Label,String filename)
+{
+  return "($filename.$Label)";
+}
+String if_goto(String Label,String filename )
+{
+  return "@SP\nM=M-1\nA=M\nD=M\n@$filename."+Label+"\nD;JNE ";
+}
+String call(String func,int n)
+{
+  var result="";
+  result+="@$func.ReturnAddress\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+  result+=pushAll("LCL");
+  result+=pushAll("ARG");
+  result+=pushAll("THIS");
+  result+=pushAll("THAT");
+  result+=  "@SP\nD=M\n@5\nD=D-A\n@$n\nD=D-A\n@ARG\nM=D\n";
+  result+="@SP\nD=M\n@LCL\nM=D\n";
+  result+=goto(func, "");
+  result+="($func.ReturnAddress)";
+   return result;
+}
+String pushAll(String ord)
+{
+return ["@$ord","D=M","@SP","A=M","M=D","@SP","M=M+1"].join('\n');
 }
 String push(String offset, var value,String filename) {
   String result = "";
   int val = int.parse(value);
   switch (offset) {
     case "local":
-      result += "@$val" +  "\nD=A\n@LCL\n";
-      result += "A=M\nD=D+A\nA=D\n" +
-          "D=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n";
+      result +=["@$val","D=A","@LCL","A=M+D","D=M","@SP","A=M","M=D","@SP","M=M+1"].join('\n');
       break;
     case "argument":
       result += "@$val" +  "\nD=A\n@ARG\n";
