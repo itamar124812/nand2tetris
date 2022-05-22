@@ -3,17 +3,24 @@
 import 'dart:io';
 
 class Tokenizing{
-  final _keyword=RegExp( r'(class|constructor|function|method|field|static|var|int|char|boolean|void|true|false|null|this|let|do|if|else|while|return)');
+  final _keyword=RegExp( r'^(class|constructor|function|method|field|static|var|int|char|boolean|void|true|false|null|this|let|do|if|else|while|return)$');
   final _symbol=RegExp(r'([{}()[\]\.,;+\-\*/&|<>=~])');
   final _integerConstant=RegExp("[0-9]+");
   final _identifier=RegExp("[A-Za-z_][A-Za-z0-9_]*");
   final _string=RegExp("\"([^\"]*)\"");
-  final _symbolList=["(","[","{","}","\\","]","\"","/",".",",",";","+","-","*","&","|","<",">","=","~",")"];
+  final _symbolList=["(","[","{","}","]","/",".",",",";","+","-","*","&","|","<",">","=","~",")"];
   
   
  
   Tokenizing(String path)
   {
+    String a=getTOkens(path);
+     var outputFile =
+            File(path.substring(0,path.lastIndexOf(r"\")) + r"\" + path.split("\\").last.split(".").first + "Ta.xml");
+        outputFile.create(recursive: true).then((File outputFile) {});
+        outputFile.writeAsString(a);
+    /*
+    print("Start constructor:\n");
      var outputString=StringBuffer("<tokens>\n");
     var list=path.split(r"\");
     var fileNmae=list[list.length-1];
@@ -51,7 +58,7 @@ class Tokenizing{
       }   
     }
 outputString.writeln("</tokens>");
-print(outputString);
+print(outputString);*/
   }
  
   String removeAllComments(String input)
@@ -83,5 +90,55 @@ String putSpaces(String input)
     }
   }
   return output;
+}
+String getTOkens(String path)
+{
+  var outputString=StringBuffer("<tokens>\n");
+    bool flag=false;
+    var list=path.split(r"\");
+    var fileNmae=list[list.length-1];
+    var file=new File(path);
+    var lines = removeAllComments(file.readAsStringSync());
+    String word="";
+    for (var i = 0; i < lines.length; i++) {
+      if(_symbolList.contains(lines[i]) || lines[i]=="\n"||lines[i]==" "||lines[i]=="\"")
+      {
+        if(flag)
+        { 
+          if(lines[i]=="\"")
+          {
+          flag=false;
+          outputString.writeln("<stringConstant> " + word + " </stringConstant>");
+          word="";
+          }
+          else 
+          {
+          word+=lines[i];
+          continue;      
+           }
+        }  
+        else{
+        word=word.trim();
+        if(_keyword.hasMatch(word)) outputString.writeln("<keyword> $word </keyword>");
+        else if(_integerConstant.hasMatch(word)) outputString.writeln("<integerConstant> $word </integerConstant>");
+        else if(_identifier.hasMatch(word))outputString.writeln("<identifier> $word </identifier>");
+        else if(lines[i]== "\"" && !flag) 
+        flag = true;
+        else if(_symbol.hasMatch(word)){
+        if(word=="<") word="&lt;";
+        if(word==">") word="&gt;";
+        if(word =="\"")word="&quot;";
+        if(word=="&")word="&amp;";
+        outputString.writeln("<symbol> $word </symbol>");
+        }
+        word="";
+        if(_symbolList.contains(lines[i])) word+=lines[i];
+        }
+      }
+      else word+=lines[i];
+    }
+    outputString.writeln("</tokens>");
+    print(outputString);
+    return outputString.toString();
 }
 }
