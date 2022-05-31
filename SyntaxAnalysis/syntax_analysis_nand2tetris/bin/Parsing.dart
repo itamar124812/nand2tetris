@@ -10,7 +10,7 @@ class Parsing{
     String fileString="";
     List<String>? fileLine;
     var outputString=StringBuffer();
-    Stack<String> stack=Stack();
+    
     String nextTok()
     {
 String str=fileLine![index];
@@ -22,35 +22,20 @@ String str=fileLine![index];
             break;
           default:                  
         }
-        index++;
         return w;      
     }
-    void pushForStack()
-    {
-        stack.push(nextTok());
-    }
-    void reduceVarDec()
-    {
-      
-    }
-    void reducetype()
-    {
-           String type=stack.pop();
-           outputString.writeln("<keyword>$type</keyword>");
-           stack.push("type");    
-    }
+   
 
     Parsing(String path)
     {       
-      var outputFile=File(path.substring(0,path.lastIndexOf(r"\")) + r"\" + path.split("\\").last.split(".").first+ "popA.xml")
+      var outputFile=File(path.substring(0,path.lastIndexOf(r"\")) + r"\" + path.split("\\").last.split(".").first+ "popA.xml");
         var tokenizing=File(path);        
         outputFile.create(recursive: true).then((File outputFile) {});
        fileString = tokenizing.readAsStringSync();
        fileLine = tokenizing.readAsLinesSync();
     }
    void classGrammar(File tokenizing) {
-       pushForStack();
-     switch()
+
      
 
      
