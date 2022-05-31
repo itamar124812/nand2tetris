@@ -71,6 +71,7 @@ print(outputString);*/
     input=putSpaces(input);
     return input;
   }
+
 String putSpaces(String input)
 {
   var output=""; 
