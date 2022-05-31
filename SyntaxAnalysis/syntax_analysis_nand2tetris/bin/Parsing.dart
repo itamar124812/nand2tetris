@@ -1,48 +1,50 @@
 import 'dart:core';
-import 'dart:core';
+import 'dart:ffi';
+
 import 'dart:io';
 import 'Token.dart';
 
 class Parsing{
     int levelScope = 1;
     bool funcParam = false;
+    String fileString="";
+    var outputFile;
+    List<String>? fileLine;
     Parsing(String path)
-    {
-
-    }
-    String classGrammar(File tokenizing)
-    {
-        var dir;
-        var fileNaume;
-        var outputFile= File(dir.path + r"\" + "popA.xml");
+    {       
+        var tokenizing=File(path);        
+        outputFile= File(path.substring(0,path.lastIndexOf(r"\")) + r"\" + path.split("\\").last.split(".").first+ "popA.xml");
         outputFile.create(recursive: true).then((File outputFile) {});
-       String fileString = tokenizing.readAsStringSync();
-       List<String> fileLine = tokenizing.readAsLinesSync();
+       fileString = tokenizing.readAsStringSync();
+       fileLine = tokenizing.readAsLinesSync();
+    }
+   void classGrammar(File tokenizing)
+    {      
         outputFile.writeAsString("<class>\n", mode: FileMode.append);
-        for(int i = 0;i < fileLine.length; i++){
-           if(fileLine[i].contains('{')){
-               outputFile.writeAsString(addTabs(fileLine[i]), mode: FileMode.append);
-               handleOpen1(outputFile,fileLine[i+1]);
+        for(int i = 0;i < fileLine!.length; i++){
+           if(fileLine![i].contains('{')){
+               outputFile.writeAsString(addTabs(fileLine![i]), mode: FileMode.append);
+               handleOpen1(outputFile,fileLine![i+1]);
            }
-           else if(fileLine[i].contains("(")){
-               handleOpen2(outputFile,fileLine[i]);
+           else if(fileLine![i].contains("(")){
+               handleOpen2(outputFile,fileLine![i]);
            }
-           else if(fileLine[i].contains("}")){
-             handleClose1(outputFile,fileLine[i]);
-             outputFile.writeAsString(addTabs(fileLine[i]), mode: FileMode.append);
+           else if(fileLine![i].contains("}")){
+             handleClose1(outputFile,fileLine![i]);
+             outputFile.writeAsString(addTabs(fileLine![i]), mode: FileMode.append);
            }
-           else if(fileLine[i].contains(")")){
-              handleClose2(outputFile, fileLine[i],fileLine[i+1]);
+           else if(fileLine![i].contains(")")){
+              handleClose2(outputFile, fileLine![i],fileLine![i+1]);
            }
-           else if(fileLine[i].contains("")){
+           else if(fileLine![i].contains("")){
 
            }
            else{
-               outputFile.writeAsString(addTabs(fileLine[i]), mode: FileMode.append);
+               outputFile.writeAsString(addTabs(fileLine![i]), mode: FileMode.append);
            }
        }
         outputFile.writeAsString("<class\\>\n", mode: FileMode.append);
-       exit(0);
+      
     }
 
     String addTabs(String line){
