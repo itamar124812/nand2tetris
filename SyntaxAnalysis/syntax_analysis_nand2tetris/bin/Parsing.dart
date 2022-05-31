@@ -11,20 +11,23 @@ class Parsing{
     List<String>? fileLine;
     var outputString=StringBuffer();
     Stack<String> stack=Stack();
-    void pushForStack()
+    String nextTok()
     {
-        String str=fileLine![index];
+String str=fileLine![index];
         var w=str.substring(str.indexOf('<')+1,str.indexOf('>')-1);
         switch (w) {
           case "keyword":
           case "symbol":
             w=str.substring(str.indexOf('>')+1,str.indexOf('<',str.indexOf('>')+1)-1);
-            stack.push(w);
             break;
-          default:
-             stack.push(w);
+          default:                  
         }
         index++;
+        return w;      
+    }
+    void pushForStack()
+    {
+        stack.push(nextTok());
     }
     void reduceVarDec()
     {
@@ -46,8 +49,8 @@ class Parsing{
        fileLine = tokenizing.readAsLinesSync();
     }
    void classGrammar(File tokenizing) {
-     pushForStack();
-     
+       pushForStack();
+     switch()
      
 
      
