@@ -8,9 +8,8 @@ class Parsing{
     int index=0;
     bool funcParam = false,ifParam =false, whileParam = false;
     String fileString="";
-    File outputFile;
     List<String>? fileLine;
-    final Map<int,String> scoopMap = new Map();
+    var outputString=StringBuffer();
     Stack<String> stack=Stack();
     void pushForStack()
     {
@@ -34,19 +33,21 @@ class Parsing{
     void reducetype()
     {
            String type=stack.pop();
-           outputFile.writeAsString("<keyword>$type</keyword>");
+           outputString.writeln("<keyword>$type</keyword>");
            stack.push("type");    
     }
 
-    Parsing(String path): outputFile=File(path.substring(0,path.lastIndexOf(r"\")) + r"\" + path.split("\\").last.split(".").first+ "popA.xml")
+    Parsing(String path)
     {       
+      var outputFile=File(path.substring(0,path.lastIndexOf(r"\")) + r"\" + path.split("\\").last.split(".").first+ "popA.xml")
         var tokenizing=File(path);        
         outputFile.create(recursive: true).then((File outputFile) {});
        fileString = tokenizing.readAsStringSync();
        fileLine = tokenizing.readAsLinesSync();
     }
    void classGrammar(File tokenizing) {
-     outputFile.writeAsString("<class>\n", mode: FileMode.append);
+     pushForStack();
+     
      
 
      
