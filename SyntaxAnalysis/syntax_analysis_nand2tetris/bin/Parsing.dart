@@ -1,6 +1,6 @@
 import 'dart:core';
 import 'dart:ffi';
-
+import 'package:stack/stack.dart';
 import 'dart:io';
 import 'Token.dart';
 
@@ -11,6 +11,7 @@ class Parsing{
     var outputFile;
     List<String>? fileLine;
     final Map<int,String> scoopMap = new Map();
+    Stack<String> stack=Stack();
 
     Parsing(String path)
     {       
