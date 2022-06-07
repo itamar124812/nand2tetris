@@ -1,0 +1,3 @@
+class code_genretor {
+ 
+}
