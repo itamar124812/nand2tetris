@@ -646,7 +646,7 @@ class Parsing {
           tokens.add(copyline());
           tokens.add(addTabs("<expression>\n"));
           levelScope+=1;
-          expressionF(pattern);
+          expressionF(nextTok());
           levelScope-=1;
           tokens.add(addTabs("</expression>\n"));
           temp = nextTok();
