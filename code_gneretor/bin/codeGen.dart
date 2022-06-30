@@ -41,7 +41,16 @@ String getTok(int index)
 }
   String currentTok() {
     String str = inputFile![index];
+    
     var w="";
+    RegExp c=RegExp("<([a-zA-Z0-9]*)> [a-zA-Z0-9\,\.\*]* <\/([a-zA-Z0-9]*)>");
+    if(c.hasMatch(str.trim()))
+    {
+      str=str.trim();
+      int strindex= str.trim().indexOf('>');
+       w = str.trim().substring(
+        strindex + 2, str.indexOf('<',strindex + 1) - 1);
+    }
     if(str.contains("<\w*> \w*"))
     {
     w = str.substring(
@@ -97,7 +106,9 @@ String getTok(int index)
         int varcount=0;
         SymbolTable subroutineTable=SymbolTable();
         index=findToken("<subroutineDec>");
-        String funcName=getTok(index+3);
+        index=findToken("<keyword>",index++);
+        
+        String funcName=getTok(index+2);
         int finalindex=findToken("</subroutineDec>");
         if(findToken("<parameterList>",finalindex)!=-1)
         { 
