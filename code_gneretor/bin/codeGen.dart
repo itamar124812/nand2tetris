@@ -41,8 +41,12 @@ String getTok(int index)
 }
   String currentTok() {
     String str = inputFile![index];
-    var w = str.substring(
+    var w="";
+    if(str.contains("<\w*> \w*"))
+    {
+    w = str.substring(
         str.indexOf('>') + 2, str.indexOf('<', str.indexOf('>') + 1) - 1);
+    }  
     return w;
   }
 
@@ -55,11 +59,12 @@ String getTok(int index)
    }
     return -1;
   }
-  int findToken(String token) {
+  int findToken(String token,[int end=1000000]) {
     int temp = index;
   if(stringinput.contains(token,temp))
    {
       temp=inputFile.indexWhere((String str)=>str.trim().startsWith(token),temp);
+      if(temp>=end) return -1;
       return temp;
    }
     return -1;
@@ -87,13 +92,24 @@ String getTok(int index)
           break;
         }
     }
-    if(findToken("<subroutineDec>")!=-1){
-      {
+    while(findToken("<subroutineDec>")!=-1){
+      {        
         int varcount=0;
         SymbolTable subroutineTable=SymbolTable();
         index=findToken("<subroutineDec>");
         String funcName=getTok(index+3);
-        while(findToken("<varDec>")!=-1){       
+        int finalindex=findToken("</subroutineDec>");
+        if(findToken("<parameterList>",finalindex)!=-1)
+        { 
+        index=findToken("<parameterList>",finalindex);
+        if(findToken("</parameterList>")!=index+1){
+          do{              
+            index++;
+            subroutineTable.addSymbol(Symbol(getTok(index+1),currentTok(),category.argument,varcount++));
+            index+=2;
+        }while(currentTok()==",");
+        }}
+        while(findToken("<varDec>",finalindex)!=-1){       
           index=findToken("<varDec>");
             String _type=getTok(index+2);
           subroutineTable.addSymbol(Symbol(getTok(index+3),_type,category.local,++varcount));
