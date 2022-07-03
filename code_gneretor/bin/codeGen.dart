@@ -1,3 +1,4 @@
+import 'dart:developer';
 import 'dart:io';
 
 
@@ -51,7 +52,12 @@ String getTok(int index)
        w = str.trim().substring(
         strindex + 2, str.indexOf('<',strindex + 1) - 1);
     }
-    if(str.contains("<\w*> \w*"))
+    else if(RegExp(r"^<\w*>$").hasMatch(str.trim()))
+    {
+        str=str.trim();
+        w=str.substring(str.indexOf("<"),str.indexOf(">"));
+    }
+    else if(str.contains("<\w*> \w*"))
     {
     w = str.substring(
         str.indexOf('>') + 2, str.indexOf('<', str.indexOf('>') + 1) - 1);
@@ -81,6 +87,7 @@ String getTok(int index)
  void classf()
  {
     _className=currentTok();
+    String pushThis="";
     index++;
     if(_className!="Main") output.writeln("function $_className.new 0");
     if(findClassVarDec() != -1){
@@ -107,7 +114,11 @@ String getTok(int index)
         SymbolTable subroutineTable=SymbolTable();
         index=findToken("<subroutineDec>");
         index=findToken("<keyword>",index++);
-        
+        if(currentTok()=="method")
+        {
+          pushThis="push argument 0 \npop pointer 0\n";
+          subroutineTable.addSymbol(Symbol("this", _className, category.argument, 0));
+        }
         String funcName=getTok(index+2);
         int finalindex=findToken("</subroutineDec>");
         if(findToken("<parameterList>",finalindex)!=-1)
@@ -132,8 +143,67 @@ String getTok(int index)
           }        
        }
         output.writeln("function $_className.$funcName $varcount");
-       
+       output.write(pushThis);
+
  }
     }
+}
+void Statements(SymbolTable SRTable)
+{
+  int finalIndex=findToken("</statements>");
+  while(index<finalIndex)
+  {
+  switch(getTok(index))
+  {
+    case "letStatement":{
+      int  classindex=symbolTable.indexOf(getTok(index+2));
+      int funcindex=SRTable.indexOf(getTok(index+2));
+      String popSome="";
+      String type=SRTable.TypeOf(getTok(index+2))??"";
+      if(funcindex!=-1)
+      {       
+        index+=3;
+        if(currentTok()=="["){ 
+          expression();
+        }
+        else    
+        {
+          popSome="pop "+type+" $funcindex";
+        }
+        expression();
+             }
+      else if(classindex!=-1)
+      {
+         
+      }
+      else
+      {
+
+      }
+      output.writeln(popSome);
+break;
+    }
+    case "returnStatement":
+    {
+      break;
+    }
+    case "doStatement":
+    {
+      break;
+    }
+    case "ifStatement":
+    {
+      break;
+    }
+    case "whileStatement":
+    {
+      break;
+    }
+  }
+  }
+}
+void expression()
+{
+
 }
 }
