@@ -197,7 +197,7 @@ class Parsing {
             tokens.add(copyline());
             nextTok();
             tokens.add(copyline());
-            String temp = nextTok();
+            temp = nextTok();
           }
         }
         break;

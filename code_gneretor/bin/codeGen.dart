@@ -1,5 +1,6 @@
 import 'dart:developer';
 import 'dart:io';
+import 'dart:math';
 
 
 import 'Table.dart';
@@ -9,10 +10,10 @@ class code_genretor {
   StringBuffer output=StringBuffer();
   SymbolTable symbolTable=SymbolTable();
   
-  int index=2;
+  int index = 0;
   String _filename = "";
   String _className = "";
-  int varlibels = 0;
+  int varlibels = 0, staticVar = 0;
   List<String> inputFile=[];
   String stringinput="";
   
@@ -21,6 +22,7 @@ class code_genretor {
     var outputFile = File(
     path.substring(0, path.lastIndexOf(r"\")) + r"\" + path.split("\\").last.split(".").first + ".vm");
     inputFile = File(path).readAsLinesSync();
+    firstclass();
     stringinput = File(path).readAsStringSync();
     outputFile.create(recursive: true).then((File outputFile) {});
     _filename = path.split("\\").last.split(".").first;
@@ -30,7 +32,7 @@ String getTok(int index)
 {
   if(index>=0&&index<inputFile.length)
   {
-    String str= inputFile![index];
+    String str= inputFile[index];
     var w = str.substring(
         str.indexOf('>') + 2, str.indexOf('<', str.indexOf('>') + 1) - 1);
     return w;
@@ -41,7 +43,7 @@ String getTok(int index)
   }
 }
   String currentTok() {
-    String str = inputFile![index];
+    String str = inputFile[index];
     
     var w="";
     RegExp c=RegExp("<([a-zA-Z0-9]*)> [a-zA-Z0-9\,\.\*]* <\/([a-zA-Z0-9]*)>");
@@ -67,13 +69,18 @@ String getTok(int index)
 
   int findClassVarDec() {
     int temp = index;
-   while(stringinput.contains("<classVarDec>",temp))
+   while(temp < inputFile.length)
    {
-      temp=stringinput.indexOf("<classVarDec>",temp);
-      return temp;
+     if(inputFile[temp].contains("<classVarDec>")){
+       return ++temp;
+     }
+     else{
+        temp +=1;
+     }
    }
     return -1;
   }
+
   int findToken(String token,[int end=1000000]) {
     int temp = index;
   if(stringinput.contains(token,temp))
@@ -84,70 +91,86 @@ String getTok(int index)
    }
     return -1;
   }
- void classf()
- {
-    _className=currentTok();
-    String pushThis="";
-    index++;
-    if(_className!="Main") output.writeln("function $_className.new 0");
-    if(findClassVarDec() != -1){
-      index = findClassVarDec();
-      while(currentTok()=="static" || currentTok()=="field"){
-          if(currentTok()=="field"){
-            index++;
-            String type = currentTok();
-            index++;
-            symbolTable.addSymbol(Symbol(currentTok(),type,category.field,varlibels++));
-            while(currentTok()==","){
-              index++;
-              symbolTable.addSymbol(Symbol(currentTok(),type,category.field,varlibels++));
-              index++;
-            }
-          }
 
-          break;
-        }
-    }
-    while(findToken("<subroutineDec>")!=-1){
-      {        
-        int varcount=0;
-        SymbolTable subroutineTable=SymbolTable();
-        index=findToken("<subroutineDec>");
-        index=findToken("<keyword>",index++);
-        if(currentTok()=="method")
-        {
-          pushThis="push argument 0 \npop pointer 0\n";
-          subroutineTable.addSymbol(Symbol("this", _className, category.argument, 0));
-        }
-        String funcName=getTok(index+2);
-        int finalindex=findToken("</subroutineDec>");
-        if(findToken("<parameterList>",finalindex)!=-1)
-        { 
-        index=findToken("<parameterList>",finalindex);
-        if(findToken("</parameterList>")!=index+1){
-          do{              
-            index++;
-            subroutineTable.addSymbol(Symbol(getTok(index+1),currentTok(),category.argument,varcount++));
-            index+=2;
-        }while(currentTok()==",");
-        }}
-        while(findToken("<varDec>",finalindex)!=-1){       
-          index=findToken("<varDec>");
-            String _type=getTok(index+2);
-          subroutineTable.addSymbol(Symbol(getTok(index+3),_type,category.local,++varcount));
-          index+=4;
-          while(currentTok()==","){
-            index++;
-            subroutineTable.addSymbol(Symbol(getTok(index),_type,category.local,++varcount));
-            index++;
-          }        
+ void classf() {
+   index += 2;
+   _className = currentTok();
+   if (_className != "Main") output.writeln("function $_className.new 0");
+     while (findClassVarDec() != -1) {
+       index = findClassVarDec();
+       String ForS = currentTok();
+       index++;
+       String type = currentTok();
+       index++;
+       if (ForS == "field") {
+         symbolTable.addSymbol(
+             Symbol(currentTok(), type, category.field, varlibels++));
        }
-        output.writeln("function $_className.$funcName $varcount");
-       output.write(pushThis);
+       else{
+         symbolTable.addSymbol(
+             Symbol(currentTok(), type, category.field, staticVar++));
+       }
+       index++;
+       while (currentTok() == ",") {
+         index++;
+         if (ForS == "field") {
+           symbolTable.addSymbol(
+               Symbol(currentTok(), type, category.field, varlibels++));
+         }
+         else{
+           symbolTable.addSymbol(
+               Symbol(currentTok(), type, category.field, staticVar++));
+         }
+         index++;
+       }
+       index++;
+     }
 
- }
-    }
-}
+     while (findToken("<subroutineDec>") != -1) {
+       {
+         int varcount = 0;
+         var pushThis;
+         SymbolTable subroutineTable = SymbolTable();
+         index = findToken("<subroutineDec>");
+         index = findToken("<keyword>", index++);
+         if (currentTok() == "method") {
+           pushThis = "push argument 0 \npop pointer 0\n";
+           subroutineTable.addSymbol(
+               Symbol("this", _className, category.argument, 0));
+         }
+         String funcName = getTok(index + 2);
+         int finalindex = findToken("</subroutineDec>");
+         if (findToken("<parameterList>", finalindex) != -1) {
+           index = findToken("<parameterList>", finalindex);
+           if (findToken("</parameterList>") != index + 1) {
+             do {
+               index++;
+               subroutineTable.addSymbol(Symbol(
+                   getTok(index + 1), currentTok(), category.argument,
+                   varcount++));
+               index += 2;
+             } while (currentTok() == ",");
+           }
+         }
+         while (findToken("<varDec>", finalindex) != -1) {
+           index = findToken("<varDec>");
+           String _type = getTok(index + 2);
+           subroutineTable.addSymbol(
+               Symbol(getTok(index + 3), _type, category.local, ++varcount));
+           index += 4;
+           while (currentTok() == ",") {
+             index++;
+             subroutineTable.addSymbol(
+                 Symbol(getTok(index), _type, category.local, ++varcount));
+             index++;
+           }
+         }
+         output.writeln("function $_className.$funcName $varcount");
+         output.write(pushThis);
+       }
+     }
+
+ }/*
 void Statements(SymbolTable SRTable)
 {
   int finalIndex=findToken("</statements>");
@@ -206,4 +229,22 @@ void expression()
 {
 
 }
-}
+}*/
+
+  void firstclass() {
+    int i = 0;
+    bool flag = true;
+    while(flag){
+      if (i >= inputFile.length) flag = false;
+      else if(inputFile[i].contains("<class>")){
+        flag = false;
+        index = i;
+      }
+      else{
+        i +=1;
+      }
+    }
+  }
+
+  }
+
