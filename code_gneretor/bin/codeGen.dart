@@ -133,12 +133,15 @@ String getTok(int index)
          SymbolTable subroutineTable = SymbolTable();
          index = findToken("<subroutineDec>");
          index = findToken("<keyword>", index++);
+         String funcName = getTok(index + 2);
          if (currentTok() == "method") {
            pushThis = "push argument 0 \npop pointer 0\n";
            subroutineTable.addSymbol(
                Symbol("this", _className, category.argument, 0));
          }
-         String funcName = getTok(index + 2);
+          else if (currentTok() == "constructor") {
+            funcName="new";
+          }
          int finalindex = findToken("</subroutineDec>");
          if (findToken("<parameterList>", finalindex) != -1) {
            index = findToken("<parameterList>", finalindex);
@@ -170,8 +173,8 @@ String getTok(int index)
        }
      }
 
- }/*
-void Statements(SymbolTable SRTable)
+ }
+void Statements(SymbolTable SRTable,int funcType)
 {
   int finalIndex=findToken("</statements>");
   while(index<finalIndex)
@@ -186,14 +189,18 @@ void Statements(SymbolTable SRTable)
       if(funcindex!=-1)
       {       
         index+=3;
-        if(currentTok()=="["){ 
+        if(currentTok()=="<symbol> [ </symbol>"){ 
           expression();
+          output.writeln("push $type $funcindex\nadd \n");
+          popSome="pop temp 0\npop pointer 1\npush temp 0\n push that 0\n";
+          index=findToken("<symbol> ] </symbol>");
         }
         else    
         {
           popSome="pop "+type+" $funcindex";
         }
         expression();
+        output.write(popSome);
              }
       else if(classindex!=-1)
       {
@@ -208,14 +215,39 @@ break;
     }
     case "returnStatement":
     {
+      if(getTok(index+2)!=";")
+      {
+        expression();
+      }
+      output.writeln("return");
       break;
     }
     case "doStatement":
     {
+      index+=2;
+      String funcName=getTok(index);
+      int finalindex=findToken("</doStatement>");
+      index+=2;
+      int argumentesNum=0;
+      if(findToken("<expressionList>",finalindex)!=-1)
+      {
+        index=findToken("<expressionList>",finalindex);
+        index+=2;
+        while(currentTok()!=")")
+        {
+          expression();
+          index++;
+          argumentesNum++;
+        }
+      }
+      output.writeln("call $_className.$funcName $argumentesNum");
+      output.writeln("pop temp 0");
+      index=finalindex;
       break;
     }
     case "ifStatement":
     {
+      
       break;
     }
     case "whileStatement":
@@ -227,9 +259,34 @@ break;
 }
 void expression()
 {
-
+  switch(getTok(index))
+  {
+    case "term":
+    {
+      index++;
+      break;
+    }
+    case "unaryOp":
+    {
+      index++;
+      expression();
+      break;
+    }
+    case "op":
+    {
+      index++;
+      expression();
+      expression();
+      break;
+    }
+    case "expression":
+    {
+      index++;
+      break;
+    }
+  }
 }
-}*/
+
 
   void firstclass() {
     int i = 0;
