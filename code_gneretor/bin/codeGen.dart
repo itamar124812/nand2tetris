@@ -11,6 +11,8 @@ class code_genretor {
   SymbolTable symbolTable=SymbolTable();
   
   int index = 0;
+  int iflabel = 0;
+  int whilelabel = 0;
   String _filename = "";
   String _className = "";
   int varlibels = 0, staticVar = 0;
@@ -81,7 +83,8 @@ String getTok(int index)
     return -1;
   }
 
-  int findToken(String token,[int end=1000000]) {
+
+int findToken(String token,[int end=1000000]) {
     int temp = index;
   if(stringinput.contains(token,temp))
    {
@@ -91,12 +94,31 @@ String getTok(int index)
    }
     return -1;
   }
-
+int findScope(String token,[int end=1000000])
+{
+  int temp=index;
+  int temp1=0;
+  while(temp<=end)
+  {
+    if(inputFile[temp].contains(token))
+    {
+      temp1++;
+    }
+    else if(inputFile[temp].contains("</$token>")&& temp1>0){ temp1--;}
+    else 
+    {
+      return temp1;
+    }
+    temp++;
+  }
+  return -1;
+}
  void classf() {
    index += 2;
+   
    _className = currentTok();
    if (_className != "Main") output.writeln("function $_className.new 0");
-     while (findClassVarDec() != -1) {
+     while (findClassVarDec() != -1) {      
        index = findClassVarDec();
        String ForS = currentTok();
        index++;
@@ -128,6 +150,7 @@ String getTok(int index)
 
      while (findToken("<subroutineDec>") != -1) {
        {
+          String funcType="";
          int varcount = 0;
          var pushThis;
          SymbolTable subroutineTable = SymbolTable();
@@ -135,12 +158,17 @@ String getTok(int index)
          index = findToken("<keyword>", index++);
          String funcName = getTok(index + 2);
          if (currentTok() == "method") {
+            funcType = "method";
            pushThis = "push argument 0 \npop pointer 0\n";
            subroutineTable.addSymbol(
                Symbol("this", _className, category.argument, 0));
          }
           else if (currentTok() == "constructor") {
+            funcType = "constructor";
             funcName="new";
+          }
+          else{
+            funcType = "function";
           }
          int finalindex = findToken("</subroutineDec>");
          if (findToken("<parameterList>", finalindex) != -1) {
@@ -170,13 +198,15 @@ String getTok(int index)
          }
          output.writeln("function $_className.$funcName $varcount");
          output.write(pushThis);
+         index = findToken("<statements>", finalindex);
+         Statements(subroutineTable,funcType);
        }
      }
-
+     print(output.toString());
  }
-void Statements(SymbolTable SRTable,int funcType)
+void Statements(SymbolTable SRTable,String funcType)
 {
-  int finalIndex=findToken("</statements>");
+  int finalIndex=findScope("<statements>");
   while(index<finalIndex)
   {
   switch(getTok(index))
@@ -219,6 +249,10 @@ break;
       {
         expression();
       }
+      else
+      {
+        output.writeln("push constant 0\n");
+      }
       output.writeln("return");
       break;
     }
@@ -247,11 +281,46 @@ break;
     }
     case "ifStatement":
     {
-      
+      iflabel++;
+      index++;
+      int finalScope=findScope("ifStatement"); //find the end of if statement
+      String elseCase="";
+      expression();
+      output.writeln("not");
+      int endScope=findScope("statements")+1;
+      if(getTok(endScope+1)=="else")
+      {
+        endScope=endScope+=2;
+        elseCase="goto IF_END$iflabel\nlabel IF_FALSE$iflabel\n";
+      }
+      output.writeln("if-goto IF_FALSE$iflabel");
+      Statements(SRTable, funcType);
+      if(elseCase!="")
+      {
+        output.writeln(elseCase);     
+        index=endScope;
+        Statements(SRTable, funcType);
+        output.writeln("label IF_END$iflabel");
+      }
+      else
+      {
+        output.writeln("label IF_FALSE$iflabel");
+      } 
+      index=finalIndex;   
       break;
     }
     case "whileStatement":
     {
+      index++;
+      whilelabel++;
+      int finalScope=findScope("whileStatement"); //find the end of while statement
+      output.writeln("label WHILE_EXP$whilelabel");
+      expression();
+      output.writeln("not");
+      output.writeln("if-goto WHILE_END$whilelabel");
+      Statements(SRTable, funcType);
+      output.writeln("goto WHILE_EXP$whilelabel");
+      output.writeln("label WHILE_END$whilelabel");
       break;
     }
   }
