@@ -59,7 +59,7 @@ String getTok(int index)
     else if(RegExp(r"^<\w*>$").hasMatch(str.trim()))
     {
         str=str.trim();
-        w=str.substring(str.indexOf("<"),str.indexOf(">"));
+        w=str.substring(str.indexOf("<")+1,str.indexOf(">"));
     }
     else if(str.contains("<\w*> \w*"))
     {
@@ -100,14 +100,13 @@ int findScope(String token,[int end=1000000])
   int temp1=0;
   while(temp<=end)
   {
-    if(inputFile[temp].contains(token))
+    if(inputFile[temp].contains("<$token>"))
     {
       temp1++;
     }
-    else if(inputFile[temp].contains("</$token>")&& temp1>0){ temp1--;}
-    else 
-    {
-      return temp1;
+    if(inputFile[temp].contains("</$token>")){
+      if(temp1==0) return temp;
+      else temp1--;
     }
     temp++;
   }
@@ -117,7 +116,6 @@ int findScope(String token,[int end=1000000])
    index += 2;
    
    _className = currentTok();
-   if (_className != "Main") output.writeln("function $_className.new 0");
      while (findClassVarDec() != -1) {      
        index = findClassVarDec();
        String ForS = currentTok();
@@ -130,7 +128,7 @@ int findScope(String token,[int end=1000000])
        }
        else{
          symbolTable.addSymbol(
-             Symbol(currentTok(), type, category.field, staticVar++));
+             Symbol(currentTok(), type, category.static, staticVar++));
        }
        index++;
        while (currentTok() == ",") {
@@ -141,7 +139,7 @@ int findScope(String token,[int end=1000000])
          }
          else{
            symbolTable.addSymbol(
-               Symbol(currentTok(), type, category.field, staticVar++));
+               Symbol(currentTok(), type, category.static, staticVar++));
          }
          index++;
        }
@@ -151,12 +149,12 @@ int findScope(String token,[int end=1000000])
      while (findToken("<subroutineDec>") != -1) {
        {
           String funcType="";
-         int varcount = 0;
+         int varcount = 0,varcount1=0;
          var pushThis;
          SymbolTable subroutineTable = SymbolTable();
          index = findToken("<subroutineDec>");
-         index = findToken("<keyword>", index++);
          String funcName = getTok(index + 2);
+         index++;
          if (currentTok() == "method") {
             funcType = "method";
            pushThis = "push argument 0 \npop pointer 0\n";
@@ -186,19 +184,24 @@ int findScope(String token,[int end=1000000])
          while (findToken("<varDec>", finalindex) != -1) {
            index = findToken("<varDec>");
            String _type = getTok(index + 2);
+           varcount1++;
            subroutineTable.addSymbol(
                Symbol(getTok(index + 3), _type, category.local, ++varcount));
            index += 4;
            while (currentTok() == ",") {
              index++;
+             varcount1++;
              subroutineTable.addSymbol(
                  Symbol(getTok(index), _type, category.local, ++varcount));
              index++;
            }
          }
-         output.writeln("function $_className.$funcName $varcount");
-         output.write(pushThis);
-         index = findToken("<statements>", finalindex);
+         output.writeln("function $_className.$funcName $varcount1");
+         if(funcType=="constructor"){
+           output.writeln("push constant $varlibels \ncall Memory.alloc 1 \npop pointer 0");
+         }
+         if(pushThis!=null)output.write(pushThis);
+         index = findToken("<statements>", finalindex)+1;
          Statements(subroutineTable,funcType);
        }
      }
@@ -206,41 +209,60 @@ int findScope(String token,[int end=1000000])
  }
 void Statements(SymbolTable SRTable,String funcType)
 {
-  int finalIndex=findScope("<statements>");
+  int finalIndex=findScope("statements");
   while(index<finalIndex)
   {
-  switch(getTok(index))
+  switch(currentTok())
   {
     case "letStatement":{
       int  classindex=symbolTable.indexOf(getTok(index+2));
       int funcindex=SRTable.indexOf(getTok(index+2));
       String popSome="";
-      String type=SRTable.TypeOf(getTok(index+2))??"";
+      String type=SRTable.kindOf(getTok(index+2)).toString().split('.').last;
       if(funcindex!=-1)
       {       
         index+=3;
         if(currentTok()=="<symbol> [ </symbol>"){ 
           expression();
-          output.writeln("push $type $funcindex\nadd \n");
+          output.writeln("push this $funcindex\nadd \n");
           popSome="pop temp 0\npop pointer 1\npush temp 0\n push that 0\n";
           index=findToken("<symbol> ] </symbol>");
         }
         else    
         {
-          popSome="pop "+type+" $funcindex";
+          popSome="pop "+"this"+" $funcindex";
         }
         expression();
         output.write(popSome);
              }
       else if(classindex!=-1)
       {
-         
+        type=symbolTable.kindOf(getTok(index+2)).toString().split('.').last;
+        index+=3;
+        if(currentTok()=="<symbol> [ </symbol>"){
+          expression();
+          output.writeln("push $type $classindex\nadd \n");
+          popSome="pop temp 0\npop pointer 1\npush temp 0\n push that 0\n";
+          index=findToken("<symbol> ] </symbol>");
+        }
+        else
+        {
+         if(type!="static"){
+            popSome = "pop " + "this" + " $classindex";
+          }
+         else {
+           popSome= "pop " + "static" + " $classindex";
+         }
+
+        }
+        expression();
       }
       else
       {
 
       }
       output.writeln(popSome);
+      index=findScope("letStatement")+1;
 break;
     }
     case "returnStatement":

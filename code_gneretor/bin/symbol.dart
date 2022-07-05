@@ -1,6 +1,7 @@
 enum category
 {
   static,field,argument,local
+
 }
 class Symbol
 {
