@@ -358,7 +358,7 @@ break;
 }
 void expression()
 {
-  switch(getTok(index))
+  switch(getAngelBarCon(index))
   {
     case "term":
     {
@@ -384,19 +384,76 @@ void expression()
       }
       break;
     }
-    case "unaryOp":
-    {
-      index++;
-      expression();
+    case "symbol":
+      {
+        switch (currentTok()) {
+          case "+":
+            {
+              output.writeln("add");
+              index++;
+              break;
+            }
+          case "-":
+            {
+              index++;
+              if(currentTok() == "term"){
+                output.writeln("not");
+              }
+              else{
+                output.writeln("sub");
+              }
+              break;
+            }
+          case "*":
+            {
+              output.writeln("mult");
+              index++;
+              break;
+            }
+          case "|":
+            {
+              output.writeln("or");
+              index++;
+              break;
+            }
+          case "&":
+            {
+              output.writeln("and");
+              index++;
+              break;
+            }
+          case "/":
+            {
+              output.writeln("div");
+              index++;
+              break;
+            }
+          case ">":
+            {
+              output.writeln("gt");
+              index++;
+              break;
+            }
+          case "<":
+            {
+              output.writeln("lt");
+              index++;
+              break;
+            }
+          case "=":
+            {
+              index++;
+              break;
+            }
+          case "~":
+            {
+              output.writeln("neg");
+              index++;
+              break;
+            }
+      }
       break;
-    }
-    case "op":
-    {
-      index++;
-      expression();
-      expression();
-      break;
-    }
+  }
     case "expression":
     {
       index++;
@@ -422,4 +479,5 @@ void expression()
   }
 
   }
+
 
