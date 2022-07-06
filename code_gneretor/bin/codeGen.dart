@@ -355,6 +355,14 @@ void expression()
     case "term":
     {
       index++;
+      switch (currentTok()) {
+        case "integerConstant":
+          output.writeln("push constant $currentTok");
+          break;
+          case "stringConstant":
+          
+        default:
+      }
       break;
     }
     case "unaryOp":
