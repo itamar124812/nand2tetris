@@ -82,7 +82,15 @@ String getTok(int index)
    }
     return -1;
   }
-
+String getAngelBarCon(int Index)
+{
+  String str=inputFile[Index].trim();
+  if(!str.contains(">") || !str.contains("<") || str.indexOf(">") < str.indexOf("<"))
+  {
+    return "";
+  }
+return str.substring(str.indexOf("<")+1,str.indexOf(">"));
+}
 
 int findToken(String token,[int end=1000000]) {
     int temp = index;
@@ -355,12 +363,23 @@ void expression()
     case "term":
     {
       index++;
-      switch (currentTok()) {
+      switch (getAngelBarCon(index)) {
         case "integerConstant":
           output.writeln("push constant $currentTok");
           break;
           case "stringConstant":
-          
+          {
+            String content=currentTok();
+            output.writeln("push constant $content.length");
+            output.writeln("call String.new 1");
+            for (int i = 0; i < content.length; i++) {
+              output.writeln("push constant $content.codeUnitAt($i)");
+              output.writeln("call String.appendChar 2");
+            }
+            break;
+          }
+
+
         default:
       }
       break;
