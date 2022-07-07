@@ -78,13 +78,18 @@ String putSpaces(String input)
   for (var i = 0; i < input.length; i++) {
     if(_symbolList.contains(input[i]))
     {
+      if(i>0){
       if(input[i-1]!=" ")
       {
              output+=" ";
       }
+      }
       output+=input[i];
+      if(i<input.length-1)
+      {
       if(input[i+1]!=" "&&input[i+1]!="\n")
          output+=" ";
+      }
     }
     else{
     output+=input[i];
