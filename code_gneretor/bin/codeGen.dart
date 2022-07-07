@@ -33,9 +33,14 @@ class code_genretor {
   String getTok(int index) {
     if (index >= 0 && index < inputFile.length) {
       String str = inputFile[index];
+      try{
       var w = str.substring(
           str.indexOf('>') + 2, str.indexOf('<', str.indexOf('>') + 1) - 1);
       return w;
+      }
+      catch(e){
+        return "";
+      }
     } else {
       return "";
     }
@@ -45,7 +50,7 @@ class code_genretor {
     String str = inputFile[index];
 
     var w = "";
-    RegExp c = RegExp("<([a-zA-Z0-9]*)> [a-zA-Z0-9\,\.\*]* <\/([a-zA-Z0-9]*)>");
+    RegExp c = RegExp("<([a-zA-Z0-9]*)> [a-zA-Z0-9\,\.\*\)\(]* <\/([a-zA-Z0-9]*)>");
     if (c.hasMatch(str.trim())) {
       str = str.trim();
       int strindex = str.trim().indexOf('>');
@@ -55,7 +60,8 @@ class code_genretor {
     } else if (RegExp(r"^<\w*>$").hasMatch(str.trim())) {
       str = str.trim();
       w = str.substring(str.indexOf("<") + 1, str.indexOf(">"));
-    } else if (str.contains("<\w*> \w*")) {
+    } 
+    else if (str.contains("<\w*> \w*")) {
       w = str.substring(
           str.indexOf('>') + 2, str.indexOf('<', str.indexOf('>') + 1) - 1);
     }
@@ -152,7 +158,7 @@ class code_genretor {
         var pushThis;
         SymbolTable subroutineTable = SymbolTable();
         index = findToken("<subroutineDec>");
-        String funcName = getTok(index + 2);
+        String funcName = getTok(index + 3);
         index++;
         if (currentTok() == "method") {
           funcType = "method";
@@ -199,6 +205,7 @@ class code_genretor {
         }
         if (pushThis != null) output.write(pushThis);
         index = findToken("<statements>", finalindex) + 1;
+        
         Statements(subroutineTable, funcType);
       }
     }
@@ -211,36 +218,38 @@ class code_genretor {
       switch (currentTok()) {
         case "letStatement":
           {
-            int classindex = symbolTable.indexOf(getTok(index + 2));
-            int funcindex = SRTable.indexOf(getTok(index + 2));
+            int classindex = symbolTable.indexOf(getTok(index + 2))-1;
+            int funcindex = SRTable.indexOf(getTok(index + 2))-1;
             String popSome = "";
             String type =
                 SRTable.kindOf(getTok(index + 2)).toString().split('.').last;
-            if (funcindex != -1) {
+            if (funcindex > -1) {
               index += 3;
-              if (currentTok() == "<symbol> [ </symbol>") {
+              if (getTok(index)=="[") {
+                index=findToken("<expression>")+1;
                 expression(SRTable);
-                output.writeln("push $type $funcindex\nadd \n");
+                output.write("push $type $funcindex\nadd \n");
                 popSome =
-                    "pop temp 0\npop pointer 1\npush temp 0\n push that 0\n";
+                    "pop temp 0\npop pointer 1\npush temp 0\npop that 0\n";
                 index = findToken("<symbol> ] </symbol>");
               } else {
-                popSome = "pop " + type + " $funcindex";
+                popSome = "pop " + type + " $funcindex\n";
               }
+              index=findToken("<expression>")+1;
               expression(SRTable);
               output.write(popSome);
-            } else if (classindex != -1) {
+            } else if (classindex > -1) {
               type = symbolTable
                   .kindOf(getTok(index + 2))
                   .toString()
                   .split('.')
                   .last;
               index += 3;
-              if (currentTok() == "<symbol> [ </symbol>") {
+              if (getTok(index)=="[") {
                 expression(SRTable);
-                output.writeln("push this $classindex\nadd \n");
+                output.writeln("push this $classindex\nadd\n");
                 popSome =
-                    "pop temp 0\npop pointer 1\npush temp 0\n push that 0\n";
+                    "pop temp 0 \npop pointer 1 \npush temp 0 \npop that 0\n";
                 index = findToken("<symbol> ] </symbol>");
               } else {
                 if (type != "static") {
@@ -249,68 +258,60 @@ class code_genretor {
                   popSome = "pop " + "static" + " $classindex";
                 }
               }
+              index+=2;
               expression(SRTable);
-            } else {}
-            output.writeln(popSome);
+              output.writeln(popSome);
+            } else {}          
             index = findScope("letStatement") + 1;
             break;
           }
         case "returnStatement":
           {
-            if (getTok(index + 2) != ";") {
+            index++;
+            int finalScope=findScope("returnStatement");
+            if (getTok(index + 1) != ";") {
               expression(SRTable);
             } else {
-              output.writeln("push constant 0\n");
+              output.writeln("push constant 0");
             }
             output.writeln("return");
+            index = finalScope + 1;
             break;
           }
         case "doStatement":
           {
             index += 2;
-            String funcName = getTok(index);
-            int finalindex = findToken("</doStatement>");
-            index += 2;
-            int argumentesNum = 0;
-            if (findToken("<expressionList>", finalindex) != -1) {
-              index = findToken("<expressionList>", finalindex);
-              index += 2;
-              while (currentTok() != ")") {
-                expression(SRTable);
-                index++;
-                argumentesNum++;
-              }
-            }
-            output.writeln("call $_className.$funcName $argumentesNum");
+            int finalindex=findScope("doStatement");
+            SubrotineCall(SRTable);
             output.writeln("pop temp 0");
-            index = finalindex;
+            index = finalindex+1;
             break;
           }
         case "ifStatement":
-          {
-            iflabel++;
+          {           
             index++;
             int finalScope =
                 findScope("ifStatement"); //find the end of if statement
             String elseCase = "";
+            index=findToken("<expression>")+1;
             expression(SRTable);
-            output.writeln("not");
+            output.writeln("if-goto IF_TRUE$iflabel\ngoto IF_FALSE$iflabel\nlabel IF_TRUE$iflabel");
+            index=findToken("<statements>")+1;
             int endScope = findScope("statements") + 1;
             if (getTok(endScope + 1) == "else") {
               endScope = endScope += 2;
-              elseCase = "goto IF_END$iflabel\nlabel IF_FALSE$iflabel\n";
+              elseCase = "Raz&Itamar Kings";
             }
-            output.writeln("if-goto IF_FALSE$iflabel");
             Statements(SRTable, funcType);
+            output.writeln("goto IF_END$iflabel\nlabel IF_FALSE$iflabel");
             if (elseCase != "") {
-              output.writeln(elseCase);
               index = endScope;
+              index=findToken("<statements>")+1;
               Statements(SRTable, funcType);
-              output.writeln("label IF_END$iflabel");
-            } else {
-              output.writeln("label IF_FALSE$iflabel");
-            }
+            } 
+            output.writeln("label IF_END$iflabel");
             index = finalIndex;
+            iflabel++;
             break;
           }
         case "whileStatement":
@@ -333,21 +334,22 @@ class code_genretor {
   }
 
   void expression(SymbolTable SRTable) {
-    switch (getTok(index)) {
+    switch (getAngelBarCon(index)) {
       case "term":
         {
           index++;
+          int finalindex=findScope("term");
           switch (getAngelBarCon(index)) {
             case "integerConstant":
-              output.writeln("push constant $currentTok");
+              output.writeln("push constant " + getTok(index));
               break;
             case "stringConstant":
               {
-                String content = currentTok();
-                output.writeln("push constant $content.length");
+                String content = getTok(index);
+                output.writeln("push constant "+content.length.toString());
                 output.writeln("call String.new 1");
                 for (int i = 0; i < content.length; i++) {
-                  output.writeln("push constant $content.codeUnitAt($i)");
+                  output.writeln("push constant "+content.codeUnitAt(i).toString());
                   output.writeln("call String.appendChar 2");
                 }
                 break;
@@ -370,33 +372,33 @@ class code_genretor {
               }
             case "identifier":
               {
-                int classindex = symbolTable.indexOf(getTok(index));
-                int funcindex = SRTable.indexOf(getTok(index));
-                String type = SRTable.kindOf(getTok(index + 2))
+                int classindex = symbolTable.indexOf(getTok(index))-1;
+                int funcindex = SRTable.indexOf(getTok(index))-1;
+                String type = SRTable.kindOf(getTok(index))
                     .toString()
                     .split('.')
                     .last;
                 String popSome = "";
-                if (funcindex != -1) {
-                  index += 3;
-                  if (currentTok() == "<symbol> [ </symbol>") {
+                if (funcindex > -1) {
+                  index++;
+                  if (getTok(index) == "[") {
+                    index = findToken("<expression>") + 1;
                     expression(SRTable);
-                    output.writeln("push $type $funcindex\nadd \n");
-                    popSome =
-                        "pop temp 0\npop pointer 1\npush temp 0\n push that 0\n";
+                    output.writeln("push $type $funcindex\nadd");
+                    popSome ="pop pointer 1\npush that 0\n";
                     index = findToken("<symbol> ] </symbol>");
                   } else {
-                    popSome = "pop " + type + " $funcindex";
+                    popSome = "push " + type + " $funcindex\n";
                   }
                   output.write(popSome);
-                } else if (classindex != -1) {
+                } else if (classindex >-1) {
                   type = symbolTable
-                      .kindOf(getTok(index + 2))
+                      .kindOf(getTok(index))
                       .toString()
                       .split('.')
                       .last;
-                  index += 3;
-                  if (currentTok() == "<symbol> [ </symbol>") {
+                  index += 1;
+                  if (getTok(index) == "[") {
                     expression(SRTable);
                     output.writeln("push this $classindex\nadd \n");
                     popSome =
@@ -404,22 +406,33 @@ class code_genretor {
                     index = findToken("<symbol> ] </symbol>");
                   } else {
                     if (type != "static") {
-                      popSome = "pop " + "this" + " $classindex";
+                      popSome = "push" + "this" + " $classindex";
                     } else {
-                      popSome = "pop " + "static" + " $classindex";
+                      popSome = "push " + "static" + " $classindex";
                     }
                   }
                 } else {
-                  output.writeln("push constant 0");
+                  SubrotineCall(SRTable);                                
                 }
                 break;
               }
             default:
           }
-          break;
+          if(getTok(index)==r"(\+|-|/|\*|\&|\<|\>|=)")
+          {
+            int temp=index;
+            index++;
+            expression(SRTable);
+            index=temp;
+            expression(SRTable);
+            index+=2;
+            index=findScope("term");
+          }
+          index=finalindex;        
+          break;         
         }
       case "symbol":
-        {
+        {          
           switch (currentTok()) {
             case "+":
               {
@@ -486,6 +499,7 @@ class code_genretor {
                 break;
               }
           }
+          break;
         }
 
       case "expression":
@@ -494,6 +508,41 @@ class code_genretor {
           break;
         }
     }
+  }
+
+  void SubrotineCall(SymbolTable SRTable) {
+     String funcname=currentTok();
+    String classname="";
+    index++;
+    int temp=index;
+    int argumentesNum = 0;                
+    if(currentTok()==".") index+=4;
+    if (findToken("</expressionList>")!=index) {        
+      do {
+        expression(SRTable);
+        index++;
+        argumentesNum++;
+      } while (currentTok() == ",");
+    }
+    index=temp;
+    if(currentTok()==".")
+    {
+      classname=funcname;
+      index++;
+      funcname=currentTok(); 
+      if(symbolTable.indexOf(classname)>-1)  
+      {
+        classname=symbolTable.TypeOf(classname)??"";
+      }
+      else if(SRTable.indexOf(classname)>-1)
+      {
+        output.writeln("push local 0");
+        argumentesNum++;
+         classname=SRTable.TypeOf(classname)??"";
+      }
+      output.writeln("call $classname.$funcname $argumentesNum");       
+    }
+    else{ output.writeln("call $funcname $argumentesNum");}  
   }
 
   void firstclass() {
