@@ -17,7 +17,7 @@ class code_genretor {
   int varlibels = 0, staticVar = 0;
   List<String> inputFile = [];
   String stringinput = "";
-
+  
 
   code_genretor(String path) {
     var outputFile = File(path.substring(0, path.lastIndexOf(r"\")) +
