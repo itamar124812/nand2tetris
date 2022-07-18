@@ -1,2 +1,2 @@
-A sample command-line application with an entrypoint in `bin/`, library code
-in `lib/`, and example unit test in `test/`.
+We build vm translator and Jack tokenizer & parser in Dart.
+projects:11,10,9,8,7 in nand2tetris challenge.
