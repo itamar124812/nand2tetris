@@ -18,6 +18,7 @@ class code_genretor {
   List<String> inputFile = [];
   String stringinput = "";
   
+  
 
   code_genretor(String path) {
     var outputFile = File(path.substring(0, path.lastIndexOf(r"\")) +
@@ -46,6 +47,19 @@ class code_genretor {
       return "";
     }
   }
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  //add some comment
 
   String currentTok() {
     String str = inputFile[index];
